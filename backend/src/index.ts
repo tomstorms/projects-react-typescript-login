@@ -12,7 +12,9 @@ import { DatabaseUserInterface, UserInterface } from './Interface/UserInterface'
 
 const LocalStrategy = passportLocal.Strategy;
 
-dotenv.config();
+dotenv.config({
+    path: `.env.${process.env.NODE_ENV}`,
+});
 
 mongoose.connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.zikku.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`, {
     useCreateIndex: true,

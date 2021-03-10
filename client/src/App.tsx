@@ -7,7 +7,7 @@ import LoginPage from './Pages/LoginPage';
 import RegisterPage from './Pages/RegisterPage';
 import NotFoundPage from './Pages/NotFoundPage';
 import ProfilePage from './Pages/ProfilePage';
-import './main.css';
+import './Styles/main.scss';
 import { myContext } from './Context/Context';
 
 function App() {

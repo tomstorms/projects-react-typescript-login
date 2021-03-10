@@ -16,3 +16,18 @@
     color: white;
     text-decoration: none;
 }
+
+.btnLogin {
+    display: flex;
+    padding: 7px 12px;
+    cursor: pointer;
+
+    &--google {
+        align-items: center;
+
+        img {
+            width: 20px;
+            margin-right: 10px;
+        }
+    }
+}

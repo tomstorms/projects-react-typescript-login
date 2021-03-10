@@ -8,7 +8,7 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import User from './Models/User';
-import { DatabaseUserInterface, UserInterface } from './Interface/UserInterface';
+import { IMongoUser, IUser } from './Interface/UserInterface';
 
 /**
  * ENV SETUP
@@ -37,15 +37,21 @@ mongoose.connect(`mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MO
  */
 const app = express();
 app.use(express.json());
-app.use(cors({origin: process.env.SITE_CORS_ORIGIN, credentials: true})); // Persist sessions in 'origin' location
+app.use(cors({ origin: process.env.SITE_CLIENT_URL, credentials: true })); // Persist session cookie on client
+// app.set("trust proxy", 1);
 app.use(
     session({
         secret: (process.env?.SITE_EXPRESS_SECRET ? process.env.SITE_EXPRESS_SECRET : 'secretcode'),
         resave: true,
         saveUninitialized: true,
+        // REQUIRED IF USING SSL
+        // cookie: {
+        //     sameSite: 'none',
+        //     secure: true,
+        //     maxAge: 1000 * 60 * 60 * 24 * 7 // One Week
+        // }
     })
 );
-app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -55,7 +61,7 @@ app.use(passport.session());
 // Local Logins
 const LocalStrategy = passportLocal.Strategy;
 passport.use(new LocalStrategy((username: string, password: string, done) => {
-    User.findOne({ username: username }, (err : Error, user: DatabaseUserInterface) => {
+    User.findOne({ username: username }, (err : Error, user: IMongoUser) => {
         if (err) throw err;
         if (!user) return done(null, false); // return 'Unauthorised'
         bcrypt.compare(password, user.password, (err, result: boolean) => {
@@ -69,19 +75,61 @@ passport.use(new LocalStrategy((username: string, password: string, done) => {
     });
 }));
 
-passport.serializeUser((user: DatabaseUserInterface, cb) => {
-    cb(null, user._id);
+passport.serializeUser((user : IMongoUser, done : any) => {
+    console.log('serializeUser');
+    console.log(user._id);
+    return done(null, user._id);
 });
 
-passport.deserializeUser((id: string, cb) => {
-    User.findOne({ _id: id }, (err : Error, user: DatabaseUserInterface) => {
-        const userInformation : UserInterface = {
-            username: user.username,
-            isAdmin: user.isAdmin,
-            id: user._id
+passport.deserializeUser((id : string, done : any) => {
+    User.findById(id, (err: Error, doc: IMongoUser) => {
+        const userInformation : IUser = {
+            username: doc.username,
+            isAdmin: doc.isAdmin,
+            id: doc._id,
+            googleId: doc.googleId,
         };
-        cb(err, userInformation);
-    });
+
+        console.log('userInformation');
+        console.log(userInformation);
+        // Whatever we return goes to the client and binds to the req.user property
+        return done(null, userInformation);
+    })
+});
+
+// Google Login
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+passport.use(new GoogleStrategy({
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CLIENT_CALLBACK_ENDPOINT
+    }, (accessToken : any, refreshToken : any, profile : any, cb : any) => {
+        console.log(profile);
+        
+        User.findOne({ googleId: profile.id }, async (err: Error, doc: IMongoUser) => {
+            if (err) {
+                return cb(err, null);
+            }
+
+            if (!doc) {
+                const newUser = new User({
+                    googleId: profile.id,
+                    username: profile.name.givenName
+                });
+
+                await newUser.save();
+                cb(null, newUser);
+            }
+            console.log(doc);
+            cb(null, doc);
+        })
+
+    }
+));
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile'] }));
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: process.env.SITE_CLIENT_URL }), (req, res) => {
+    // Successful authentication, redirect home.
+    res.redirect(process.env.SITE_CLIENT_URL!);
 });
 
 /**
@@ -95,7 +143,7 @@ app.post('/register', async (req : Request, res : Response) => {
         return;
     }
 
-    User.findOne({ username }, async (err : Error, doc : DatabaseUserInterface) => {
+    User.findOne({ username }, async (err : Error, doc : IMongoUser) => {
         if (err) throw err;
         if (doc) returnJSON(res, { status: 'fail', msg: 'User already exists' });
         if (!doc) {
@@ -117,7 +165,10 @@ app.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-    res.send(req.user);
+
+    console.log(req.user);
+
+    returnJSON(res, { status: 'success', data: req.user });
 });
 
 app.get('/logout', (req, res) => {
@@ -129,7 +180,7 @@ app.get('/logout', (req, res) => {
 const isAdministratorMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const { user } : any = req;
     if (user) {
-        User.findOne({ username: user.username }, (err : Error, doc : DatabaseUserInterface) => {
+        User.findOne({ username: user.username }, (err : Error, doc : IMongoUser) => {
             if (err) throw err;
             if (doc?.isAdmin) {
                 next();
@@ -152,11 +203,11 @@ app.post('/deleteuser', isAdministratorMiddleware, async (req, res) => {
 });
 
 app.get('/getallusers', isAdministratorMiddleware, async (req, res) => {
-    await User.find({}, (err : Error, data : DatabaseUserInterface[]) => {
+    await User.find({}, (err : Error, data : IMongoUser[]) => {
         if (err) throw err;
 
-        const filteredUsers : UserInterface[] = [];
-        data.forEach((item: DatabaseUserInterface) => {
+        const filteredUsers : IUser[] = [];
+        data.forEach((item: IMongoUser) => {
             const userInformation = {
                 id: item._id,
                 username: item.username,
@@ -169,10 +220,14 @@ app.get('/getallusers', isAdministratorMiddleware, async (req, res) => {
     });
 });
 
+
+
+
+
 /**
  * SERVER
  */
-app.listen(process.env.SITE_PORT, () => {
+app.listen(process.env.SITE_EXPRESS_PORT, () => {
     console.log("Server started");
 });
 

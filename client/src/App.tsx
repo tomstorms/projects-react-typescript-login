@@ -20,7 +20,7 @@ function App() {
                 <Route path='/' exact component={HomePage}></Route>
                 {ctx ? (
                     <>
-                        {ctx.isAdmin ? <Route path='/admin' component={AdminPage}></Route> : <Redirect from="/admin" to="/404" exact />}
+                        {ctx.isAdmin ? <Route path='/admin' component={AdminPage}></Route> : null }
                         <Route path='/profile' component={ProfilePage}></Route>
                     </>
                     ) : (

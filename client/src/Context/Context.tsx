@@ -7,7 +7,9 @@ export default function Context(props : PropsWithChildren<any>) {
     const [user, setUser] = useState<UserInterface>();
     useEffect(() => {
         axios.get(process.env.REACT_APP_SERVER_URL + '/user', { withCredentials: true }).then((res: AxiosResponse) => {
-            setUser(res.data);
+            if (res.data.status === 'success') {
+                setUser(res.data.data);
+            }
         })
     }, [])
 

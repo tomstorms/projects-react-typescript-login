@@ -9,7 +9,11 @@ const user = new mongoose.Schema({
     isAdmin: {
         type: Boolean,
         default: false,
-    }
+    },
+    googleId: {
+        type: String,
+        required: false,
+    },
 });
 
 export default mongoose.model('User', user);

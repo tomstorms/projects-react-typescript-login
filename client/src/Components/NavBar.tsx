@@ -15,6 +15,8 @@ export default function NavBar() {
             }
         });
     }
+
+    console.log(ctx);
     
     return (
         <div className="NavContainer">

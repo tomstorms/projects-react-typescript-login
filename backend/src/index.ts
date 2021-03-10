@@ -10,13 +10,17 @@ import dotenv from 'dotenv';
 import User from './Models/User';
 import { DatabaseUserInterface, UserInterface } from './Interface/UserInterface';
 
-const LocalStrategy = passportLocal.Strategy;
-
+/**
+ * ENV SETUP
+ */
 dotenv.config({
     path: `.env.${process.env.NODE_ENV}`,
 });
 
-mongoose.connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.zikku.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`, {
+/**
+ * DATABASE
+ */
+mongoose.connect(`mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_CLUSTER}/${process.env.MONGODB_NAME}?retryWrites=true&w=majority`, {
     useCreateIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -28,15 +32,15 @@ mongoose.connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASS
     console.log("Connected to MongoDB");
 });
 
-
-// Middleware
-// Persist sessions in origin location
+/**
+ * MIDDLEWARE
+ */
 const app = express();
 app.use(express.json());
-app.use(cors({origin: 'http://localhost:3000', credentials: true}));
+app.use(cors({origin: process.env.SITE_CORS_ORIGIN, credentials: true})); // Persist sessions in 'origin' location
 app.use(
     session({
-        secret: 'secretcode',
+        secret: (process.env?.SITE_EXPRESS_SECRET ? process.env.SITE_EXPRESS_SECRET : 'secretcode'),
         resave: true,
         saveUninitialized: true,
     })
@@ -45,11 +49,15 @@ app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport
+/**
+ * PASSPORT
+ */
+// Local Logins
+const LocalStrategy = passportLocal.Strategy;
 passport.use(new LocalStrategy((username: string, password: string, done) => {
     User.findOne({ username: username }, (err : Error, user: DatabaseUserInterface) => {
         if (err) throw err;
-        if (!user) return done(null, false); // return unauthorised
+        if (!user) return done(null, false); // return 'Unauthorised'
         bcrypt.compare(password, user.password, (err, result: boolean) => {
             if (err) throw err;
             if (result === true) {
@@ -76,19 +84,20 @@ passport.deserializeUser((id: string, cb) => {
     });
 });
 
-
-// Routes
+/**
+ * ROUTES
+ */
 app.post('/register', async (req : Request, res : Response) => {
 
     const { username, password } = req?.body;
     if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
-        res.send("Improper values");
+        returnJSON(res, { status: 'fail', msg: 'Invalid values' });
         return;
     }
 
     User.findOne({ username }, async (err : Error, doc : DatabaseUserInterface) => {
         if (err) throw err;
-        if (doc) res.send("User already exists");
+        if (doc) returnJSON(res, { status: 'fail', msg: 'User already exists' });
         if (!doc) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
@@ -97,12 +106,26 @@ app.post('/register', async (req : Request, res : Response) => {
                 password: hashedPassword,
             });
             await newUser.save();
-            res.send("success");
+            returnJSON(res, { status: 'success' });
         }
     });
 
 });
 
+app.post('/login', passport.authenticate('local'), (req, res) => {
+    returnJSON(res, { status: 'success' });
+});
+
+app.get('/user', (req, res) => {
+    res.send(req.user);
+});
+
+app.get('/logout', (req, res) => {
+    req.logout();
+    returnJSON(res, { status: 'success' });
+});
+
+// Setup Middleware
 const isAdministratorMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const { user } : any = req;
     if (user) {
@@ -112,33 +135,20 @@ const isAdministratorMiddleware = (req: Request, res: Response, next: NextFuncti
                 next();
             }
             else {
-                res.send('Sorry, only admins can perform this');
+                returnJSON(res, { status: 'fail', msg: 'Sorry, only admins can perform this' });
             }
         });
     }
     else {
-        res.send('Sorry, you are not lgoged in');
+        returnJSON(res, { status: 'fail', msg: 'Sorry, you are not lgoged in' });
     }
 }
-
-
-app.post('/login', passport.authenticate('local'), (req, res) => {
-    res.send('success');
-});
-
-app.get('/user', (req, res) => {
-    res.send(req.user);
-});
-
-app.get('/logout', (req, res) => {
-    req.logout();
-    res.send('success');
-});
 
 app.post('/deleteuser', isAdministratorMiddleware, async (req, res) => {
     const { id } = req?.body;
     await User.findByIdAndDelete(id);
-    res.send('success');
+
+    returnJSON(res, { status: 'success' });
 });
 
 app.get('/getallusers', isAdministratorMiddleware, async (req, res) => {
@@ -155,12 +165,19 @@ app.get('/getallusers', isAdministratorMiddleware, async (req, res) => {
             filteredUsers.push(userInformation);
         })
 
-        res.send(filteredUsers);
+        returnJSON(res, { status: 'success', data: filteredUsers });
     });
 });
 
-
-// Start server
-app.listen(4000, () => {
+/**
+ * SERVER
+ */
+app.listen(process.env.SITE_PORT, () => {
     console.log("Server started");
-})
+});
+
+
+const returnJSON = (res : Response, data : any) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(data));
+}

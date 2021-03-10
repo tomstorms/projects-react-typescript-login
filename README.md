@@ -12,8 +12,12 @@ This simple app:
 
 ## Backend
 
-If you to manually update your package.json file:
+`cd backend`
+`npm install` - Install depedencies
+`npm run dev` - Run development
 
-`npm install bcryptjs cookie-parser cors dotenv express express-session mongoose passport passport-local`
+## Frontend
 
-`npm install @types/bcryptjs @types/cookie-parser @types/cors @types/express @types/express-session @types/mongoose @types/passport @types/passport-local nodemon ts-node typescript  --save-dev`
+`cd backend`
+`npm install` - Install depedencies
+`npm run dev` - Run development

@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=development nodemon --exec ts-node src/index.ts"
+    "start": "node build/dist/index.js",
+    "dev": "NODE_ENV=development nodemon --exec ts-node src/index.ts",
+    "build": "tsc -p ."
   },
   "author": "Tom Storms",
   "license": "PRIVATE",

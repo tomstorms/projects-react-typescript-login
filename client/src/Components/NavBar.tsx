@@ -7,7 +7,7 @@ export default function NavBar() {
     const ctx = useContext(myContext);
 
     const logout = () => {
-        axios.get('http://localhost:4000/logout', { 
+        axios.get(process.env.REACT_APP_SERVER_URL + '/logout', { 
             withCredentials: true
         }).then((res: AxiosResponse) => {
             if (res.data === 'success') {

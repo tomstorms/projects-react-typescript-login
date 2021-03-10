@@ -7,7 +7,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState<string>('');
 
     const login = () => {
-        axios.post('http://localhost:4000/login', {
+        axios.post(process.env.REACT_APP_SERVER_URL + '/login', {
             username,
             password
         }, {

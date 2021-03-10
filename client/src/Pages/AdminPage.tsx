@@ -10,7 +10,7 @@ export default function AdminPage() {
     const [selectedUser, setSelectedUser] = useState<string>();
     
     useEffect(() => {
-        axios.get('http://localhost:4000/getallusers', {
+        axios.get(process.env.REACT_APP_SERVER_URL + '/getallusers', {
             withCredentials: true
         }).then((res: AxiosResponse) => {
             setData(res.data.filter((item : UserInterface) => {
@@ -31,7 +31,7 @@ export default function AdminPage() {
             }
         });
 
-        axios.post('http://localhost:4000/deleteuser', {
+        axios.post(process.env.REACT_APP_SERVER_URL + '/deleteuser', {
             id: userid!,
         }, {
             withCredentials: true

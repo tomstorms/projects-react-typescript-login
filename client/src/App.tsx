@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import NavBar from './Components/NavBar';
-import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter, Switch, Route } from 'react-router-dom';
 import HomePage from './Pages/HomePage';
 import AdminPage from './Pages/AdminPage';
 import LoginPage from './Pages/LoginPage';
@@ -20,7 +20,7 @@ function App() {
                 <Route path='/' exact component={HomePage}></Route>
                 {ctx ? (
                     <>
-                        {ctx.isAdmin ? <Route path='/admin' component={AdminPage}></Route> : null }
+                        {(ctx.userLevel === 9) ? <Route path='/admin' component={AdminPage}></Route> : null }
                         <Route path='/profile' component={ProfilePage}></Route>
                     </>
                     ) : (

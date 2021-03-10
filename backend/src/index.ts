@@ -85,9 +85,14 @@ passport.deserializeUser((id : string, done : any) => {
     User.findById(id, (err: Error, doc: IMongoUser) => {
         const userInformation : IUser = {
             username: doc.username,
-            isAdmin: doc.isAdmin,
+            userLevel: doc.userLevel,
             id: doc._id,
             googleId: doc.googleId,
+            displayName: doc.displayName,
+            firstName: doc.firstName,
+            lastName: doc.lastName,
+            profilePic: doc.profilePic,
+            profilePicUrl: doc.profilePicUrl,
         };
 
         console.log('userInformation');
@@ -114,7 +119,11 @@ passport.use(new GoogleStrategy({
             if (!doc) {
                 const newUser = new User({
                     googleId: profile.id,
-                    username: profile.name.givenName
+                    firstName: profile.name.givenName,
+                    lastName: profile.name.familyName,
+                    displayName: profile.displayName,
+                    username: profile.name.givenName,
+                    profilePicUrl: profile?.photos[0]?.value,
                 });
 
                 await newUser.save();
@@ -165,9 +174,6 @@ app.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-
-    console.log(req.user);
-
     returnJSON(res, { status: 'success', data: req.user });
 });
 
@@ -182,7 +188,7 @@ const isAdministratorMiddleware = (req: Request, res: Response, next: NextFuncti
     if (user) {
         User.findOne({ username: user.username }, (err : Error, doc : IMongoUser) => {
             if (err) throw err;
-            if (doc?.isAdmin) {
+            if (doc?.userLevel === 9) {
                 next();
             }
             else {
@@ -211,7 +217,7 @@ app.get('/getallusers', isAdministratorMiddleware, async (req, res) => {
             const userInformation = {
                 id: item._id,
                 username: item.username,
-                isAdmin: item.isAdmin,
+                userLevel: item.userLevel,
             }
             filteredUsers.push(userInformation);
         })

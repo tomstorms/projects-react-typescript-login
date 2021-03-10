@@ -1,14 +1,24 @@
 export interface IUser {
     id: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+    profilePic?: Buffer;
+    profilePicUrl?: string;
     username: string;
-    isAdmin: boolean;
+    userLevel: number;
     googleId?: string;
 }
 
 export interface IMongoUser {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+    profilePic?: Buffer;
+    profilePicUrl?: string;
     username: string;
     password: string;
-    isAdmin: boolean;
-    _id: string;
+    userLevel: number;
     googleId?: string;
 }

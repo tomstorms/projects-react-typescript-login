@@ -24,7 +24,7 @@ export default function NavBar() {
                 <>
                     <Link to="/logout" onClick={logout}>Logout</Link>
                     <Link to="/profile">Profile</Link>
-                    {ctx.isAdmin ? <Link to="/admin">Admin</Link> : null }
+                    {(ctx.userLevel === 9) ? <Link to="/admin">Admin</Link> : null }
                 </>
             ) : (
                 <>

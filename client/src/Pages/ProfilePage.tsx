@@ -22,7 +22,7 @@ export default function ProfilePage() {
                     </tr>
                     <tr>
                         <td>Profile Pic:</td>
-                        <td><img src={ctx.profilePicUrl} /></td>
+                        <td><img src={ctx.profilePicUrl} alt={ctx.displayName + ` profile picture`} /></td>
                     </tr>
                 </tbody>
             </table>

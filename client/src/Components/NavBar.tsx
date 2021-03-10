@@ -22,7 +22,7 @@ export default function NavBar() {
                 <>
                     <Link to="/logout" onClick={logout}>Logout</Link>
                     <Link to="/profile">Profile</Link>
-                    <Link to="/admin">Admin</Link>
+                    {ctx.isAdmin ? <Link to="/admin">Admin</Link> : null }
                 </>
             ) : (
                 <>

@@ -13,7 +13,7 @@ export default function RegisterPage() {
         }, {
             withCredentials: true
         }).then((res: AxiosResponse) => {
-            if (res.data === 'success') {
+            if (res.data.status === 'success') {
                 window.location.href = "/register";
             }
         });

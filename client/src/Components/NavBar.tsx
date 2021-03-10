@@ -10,7 +10,7 @@ export default function NavBar() {
         axios.get(process.env.REACT_APP_SERVER_URL + '/logout', { 
             withCredentials: true
         }).then((res: AxiosResponse) => {
-            if (res.data === 'success') {
+            if (res.data.status === 'success') {
                 window.location.href = "/";
             }
         });

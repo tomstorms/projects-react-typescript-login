@@ -13,7 +13,7 @@ export default function AdminPage() {
         axios.get(process.env.REACT_APP_SERVER_URL + '/getallusers', {
             withCredentials: true
         }).then((res: AxiosResponse) => {
-            setData(res.data.filter((item : UserInterface) => {
+            setData(res.data.data.filter((item : UserInterface) => {
                 return item.username !== ctx.username;
             }));
         })
@@ -35,6 +35,10 @@ export default function AdminPage() {
             id: userid!,
         }, {
             withCredentials: true
+        }).then((res: AxiosResponse) => {
+            if (res.data.status === 'success') {
+                window.location.href = "/admin";
+            }
         })
     }
 
